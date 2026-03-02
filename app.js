@@ -176,3 +176,11 @@ function renderGraph(data) {
 
   document.getElementById('viz-legend').style.display = 'flex';
 }
+
+// URL 파라미터 자동 실행
+(function(){
+  const p = new URLSearchParams(location.search);
+  const tx = p.get('tx'), addr = p.get('addr');
+  if (tx) { document.getElementById('search-input').value = tx; vizTx(tx); }
+  else if (addr) { document.getElementById('search-input').value = addr; vizAddr(addr); }
+})();
