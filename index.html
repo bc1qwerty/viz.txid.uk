@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitcoin TX Visualizer | txid.uk</title>
+<meta name="description" content="비트코인 트랜잭션 입출력 네트워크 시각화">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <a href="https://txid.uk" class="logo">₿ <span>txid</span>.uk</a>
+    <nav>
+      <a href="https://txid.uk">탐색기</a>
+      <a href="https://tools.txid.uk">Tools</a>
+      <a href="#" class="active">Viz</a>
+    </nav>
+    <button id="theme-btn" onclick="toggleTheme()">🌙</button>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>TX <span class="accent">Visualizer</span></h1>
+    <p class="hero-sub">트랜잭션 입출력 흐름을 네트워크 그래프로 시각화</p>
+  </div>
+
+  <div class="search-wrap">
+    <input id="tx-input" class="search-input" placeholder="TXID 입력 (64자 hex) 또는 주소 입력" spellcheck="false">
+    <button class="search-btn" onclick="loadViz()">시각화</button>
+    <button class="search-btn secondary" onclick="loadDemo()">데모</button>
+  </div>
+
+  <div id="viz-info" class="viz-info"></div>
+  <div id="viz-loading" class="viz-loading" style="display:none">
+    <div class="spinner"></div><span>데이터 로딩 중…</span>
+  </div>
+  <div id="viz-container">
+    <svg id="viz-svg"></svg>
+    <div id="tooltip" class="tooltip"></div>
+  </div>
+  <div id="viz-legend" class="viz-legend" style="display:none">
+    <div class="legend-item"><span class="legend-dot" style="background:#f7931a"></span> 입력 (Input)</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#3fb950"></span> 출력 (Output)</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#58a6ff"></span> 현재 TX</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#8b949e"></span> 주소 노드</div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span>© 2025 txid.uk</span>
+    <span>mempool.space API · D3.js v7</span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
