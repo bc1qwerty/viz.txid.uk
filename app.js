@@ -84,7 +84,7 @@ function renderGraph(data) {
     tx.vin.slice(0, 10).forEach((v, i) => {
       const addr = v.coinbase ? 'Coinbase' : (v.prevout?.scriptpubkey_address || `input-${i}`);
       const id = `in-${i}`;
-      nodes.push({ id, label: addr === 'Coinbase' ? '⛏ Coinbase' : addr.slice(0,10)+'…', type: 'input', value: v.prevout?.value || 0, addr });
+      nodes.push({ id, label: addr === 'Coinbase' ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle"><path d="M15 4l5 5-11 11H4v-5L15 4z"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Coinbase' : addr.slice(0,10)+'…', type: 'input', value: v.prevout?.value || 0, addr });
       links.push({ source: id, target: 'tx', value: v.prevout?.value || 0 });
     });
     // 출력 노드
