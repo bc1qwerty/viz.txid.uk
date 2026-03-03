@@ -84,7 +84,7 @@ function renderGraph(data) {
   if (data.type === 'tx') {
     const { tx } = data;
     // 중심 TX 노드
-    nodes.push({ id: 'tx', label: tx.txid.slice(0,8)+'…', type: 'tx', value: tx.fee || 0, txid });
+    nodes.push({ id: 'tx', label: tx.txid.slice(0,8)+'…', type: 'tx', value: tx.fee || 0, txid: tx.txid });
     // 입력 노드
     tx.vin.slice(0, 10).forEach((v, i) => {
       const addr = v.coinbase ? 'Coinbase' : (v.prevout?.scriptpubkey_address || `input-${i}`);
