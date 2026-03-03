@@ -35,7 +35,6 @@ function showLoading(v) {
 }
 
 async function vizTx(txid) {
-  document.getElementById('info-panel').innerHTML = '<div style="color:var(--text3);padding:16px">TX 데이터 로딩 중…</div>';
   showLoading(true);
   document.getElementById('viz-info').textContent = '';
   try {
