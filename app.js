@@ -97,7 +97,7 @@ function renderGraph(data) {
     nodes.push({ id: 'addr', label: address.slice(0,10)+'…', type: 'address', value: 0 });
     txs.forEach((tx, i) => {
       const id = `tx-${i}`;
-      nodes.push({ id, label: tx.txid.slice(0,8)+'…', type: 'tx', value: tx.fee || 0 });
+      nodes.push({ id, label: tx.txid.slice(0,8)+'…', type: 'tx', value: tx.fee || 0, txid: tx.txid });
       links.push({ source: 'addr', target: id, value: tx.fee || 0 });
     });
   }
@@ -163,8 +163,18 @@ function renderGraph(data) {
     tooltip.style.top = (e.offsetY - 10) + 'px';
   }).on('mouseout', () => { tooltip.style.display = 'none'; })
     .on('click', (e, d) => {
-      if (d.addr && d.type !== 'tx') window.open(`https://txid.uk/#/address/${d.addr}`, '_blank');
-      else if (d.type === 'tx' || d.id.startsWith('tx-')) window.open(`https://txid.uk/#/tx/${d.id.replace('tx-','')}`, '_blank');
+      if (d.addr && d.type !== 'tx') {
+        // 주소 노드 → 주소 시각화로 전환
+        document.getElementById('tx-input').value = d.addr;
+        vizAddress(d.addr);
+      } else if (d.type === 'tx') {
+        // TX 노드 클릭
+        const txid = d.txid || (d.id === 'tx' ? window._currentTxid : null);
+        if (txid && /^[0-9a-fA-F]{64}$/.test(txid)) {
+          document.getElementById('tx-input').value = txid;
+          vizTx(txid);
+        }
+      }
     });
 
   simulation.on('tick', () => {
