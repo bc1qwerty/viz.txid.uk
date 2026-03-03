@@ -27,7 +27,7 @@ async function loadViz() {
 async function loadDemo() {
   document.getElementById('tx-input').value = '4d5b4e1c5b2b6e6e2e3b4e1c5b2b6e6e2e3b4e1c5b2b6e6e2e3b4e1c5b2b6e6e';
   // 실제 유명 tx 사용
-  await vizTx('a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d');
+  await vizTx('f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16');
 }
 
 function showLoading(v) {
@@ -81,14 +81,14 @@ function renderGraph(data) {
     // 중심 TX 노드
     nodes.push({ id: 'tx', label: tx.txid.slice(0,8)+'…', type: 'tx', value: tx.fee || 0 });
     // 입력 노드
-    tx.vin.slice(0, 15).forEach((v, i) => {
-      const addr = v.prevout?.scriptpubkey_address || v.coinbase ? 'Coinbase' : `input-${i}`;
+    tx.vin.slice(0, 10).forEach((v, i) => {
+      const addr = v.coinbase ? 'Coinbase' : (v.prevout?.scriptpubkey_address || `input-${i}`);
       const id = `in-${i}`;
       nodes.push({ id, label: addr === 'Coinbase' ? '⛏ Coinbase' : addr.slice(0,10)+'…', type: 'input', value: v.prevout?.value || 0, addr });
       links.push({ source: id, target: 'tx', value: v.prevout?.value || 0 });
     });
     // 출력 노드
-    tx.vout.slice(0, 15).forEach((v, i) => {
+    tx.vout.slice(0, 10).forEach((v, i) => {
       const addr = v.scriptpubkey_address || `out-${i}`;
       const id = `out-${i}`;
       nodes.push({ id, label: addr.slice(0,10)+'…', type: 'output', value: v.value || 0, addr });
