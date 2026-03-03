@@ -37,7 +37,7 @@ async function vizTx(txid) {
   showLoading(true);
   document.getElementById('viz-info').textContent = '';
   try {
-    const tx = await fetch(`${API}/tx/${txid}`).then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
+    const tx = await fetch(`${API}/tx/${txid}`, {signal: AbortSignal.timeout(10000)}).then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
     window._currentTxid = txid;
     window._currentData = { type: 'tx', tx };
     renderGraph({ type: 'tx', tx });
@@ -56,7 +56,7 @@ async function vizAddress(address) {
   showLoading(true);
   document.getElementById('viz-info').textContent = '';
   try {
-    const txs = await fetch(`${API}/address/${address}/txs`).then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
+    const txs = await fetch(`${API}/address/${address}/txs`, {signal: AbortSignal.timeout(10000)}).then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
     window._currentData = { type: 'address', address, txs: txs.slice(0, 10) };
     renderGraph(window._currentData);
     document.getElementById('viz-info').innerHTML =
