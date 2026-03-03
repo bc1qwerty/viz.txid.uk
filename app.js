@@ -84,7 +84,7 @@ function renderGraph(data) {
   if (data.type === 'tx') {
     const { tx } = data;
     // 중심 TX 노드
-    nodes.push({ id: 'tx', label: tx.txid.slice(0,8)+'…', type: 'tx', value: tx.fee || 0 });
+    nodes.push({ id: 'tx', label: tx.txid.slice(0,8)+'…', type: 'tx', value: tx.fee || 0, txid });
     // 입력 노드
     tx.vin.slice(0, 10).forEach((v, i) => {
       const addr = v.coinbase ? 'Coinbase' : (v.prevout?.scriptpubkey_address || `input-${i}`);
@@ -170,18 +170,19 @@ function renderGraph(data) {
     tooltip.style.top = (e.offsetY - 10) + 'px';
   }).on('mouseout', () => { tooltip.style.display = 'none'; })
     .on('click', (e, d) => {
-      if (d.addr && d.type !== 'tx') {
-        // 주소 노드 → 주소 시각화로 전환
-        document.getElementById('tx-input').value = d.addr;
-        vizAddress(d.addr);
-      } else if (d.type === 'tx') {
-        // TX 노드 클릭
+      if (d.type === 'tx') {
+        // TX 노드 클릭 → TX 시각화
         const txid = d.txid || (d.id === 'tx' ? window._currentTxid : null);
         if (txid && /^[0-9a-fA-F]{64}$/.test(txid)) {
           document.getElementById('tx-input').value = txid;
           vizTx(txid);
         }
+      } else if (d.addr && /^(bc1|1|3)[a-zA-Z0-9]{25,62}$/.test(d.addr)) {
+        // 유효한 비트코인 주소 노드 → 주소 시각화
+        document.getElementById('tx-input').value = d.addr;
+        vizAddress(d.addr);
       }
+      // Coinbase / input-N / out-N 등 유사 주소는 무시
     });
 
   simulation.on('tick', () => {
