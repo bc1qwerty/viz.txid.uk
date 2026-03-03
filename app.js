@@ -136,8 +136,9 @@ function renderGraph(data) {
   // 노드
   const node = g.append('g').selectAll('g').data(nodes).join('g')
     .attr('cursor', 'pointer')
-    .call(d3.drag().on('start', (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
-      .on('drag', (e, d) => { d.fx=e.x; d.fy=e.y; })
+    .call(d3.drag()
+      .on('start', (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; d._dragged=false; })
+      .on('drag', (e, d) => { d.fx=e.x; d.fy=e.y; d._dragged=true; })
       .on('end', (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; }));
 
   node.append('circle')
@@ -170,19 +171,21 @@ function renderGraph(data) {
     tooltip.style.top = (e.offsetY - 10) + 'px';
   }).on('mouseout', () => { tooltip.style.display = 'none'; })
     .on('click', (e, d) => {
+      if (d._dragged) return; // 드래그 후 click 무시
       if (d.type === 'tx') {
-        // TX 노드 클릭 → TX 시각화
         const txid = d.txid || (d.id === 'tx' ? window._currentTxid : null);
-        if (txid && /^[0-9a-fA-F]{64}$/.test(txid)) {
+        if (!txid || !/^[0-9a-fA-F]{64}$/.test(txid)) return;
+        if (txid === window._currentTxid && data.type === 'tx') {
+          // 현재 TX면 탐색기로 열기
+          window.open(`https://txid.uk/#/tx/${txid}`, '_blank');
+        } else {
           document.getElementById('tx-input').value = txid;
           vizTx(txid);
         }
       } else if (d.addr && /^(bc1|1|3)[a-zA-Z0-9]{25,62}$/.test(d.addr)) {
-        // 유효한 비트코인 주소 노드 → 주소 시각화
         document.getElementById('tx-input').value = d.addr;
         vizAddress(d.addr);
       }
-      // Coinbase / input-N / out-N 등 유사 주소는 무시
     });
 
   simulation.on('tick', () => {
