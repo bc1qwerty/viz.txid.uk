@@ -25,8 +25,7 @@ async function loadViz() {
 }
 
 async function loadDemo() {
-  document.getElementById('tx-input').value = '4d5b4e1c5b2b6e6e2e3b4e1c5b2b6e6e2e3b4e1c5b2b6e6e2e3b4e1c5b2b6e6e';
-  // 실제 유명 tx 사용
+  document.getElementById('tx-input').value = 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16';
   await vizTx('f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16');
 }
 
