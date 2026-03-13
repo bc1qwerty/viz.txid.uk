@@ -1,3 +1,5 @@
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+async function fetchRetry(url,timeout,retries){for(let i=0,m=retries||2;i<=m;i++){try{return await fetch(url,{signal:AbortSignal.timeout(timeout||10000)});}catch(e){if(i>=m)throw e;await new Promise(r=>setTimeout(r,1000<<i));}}}
 'use strict';
 
 // ── 언어 ──
@@ -17,8 +19,8 @@ function setLang(l){
     if(val) el.textContent=val;
   });
 }
-function toggleLang(){document.getElementById('lang-menu')?.classList.toggle('open');}
-document.addEventListener('click',e=>{const m=document.getElementById('lang-menu');if(m&&!e.target.closest('.lang-dropdown'))m.classList.remove('open');});
+function toggleLang(){const m=document.getElementById('lang-menu');m?.classList.toggle('open');document.getElementById('lang-btn')?.setAttribute('aria-expanded',m?.classList.contains('open')||false);}
+document.addEventListener('click',e=>{const m=document.getElementById('lang-menu');if(m&&!e.target.closest('.lang-dropdown')){m.classList.remove('open');document.getElementById('lang-btn')?.setAttribute('aria-expanded','false');}});
 (function(){setLang(lang);})();
 
 const API = 'https://mempool.space/api';
@@ -66,7 +68,7 @@ async function vizTx(txid) {
   showLoading(true);
   document.getElementById('viz-info').textContent = '';
   try {
-    const tx = await fetch(`${API}/tx/${txid}`, {signal: AbortSignal.timeout(10000)}).then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
+    const tx = await fetchRetry(`${API}/tx/${txid}`,10000).then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
     window._currentTxid = txid;
     window._currentData = { type: 'tx', tx };
     renderGraph({ type: 'tx', tx });
@@ -77,7 +79,7 @@ async function vizTx(txid) {
       `입력 ${tx.vin.length}개 (${(totalIn/1e8).toFixed(4)} BTC) → ` +
       `출력 ${tx.vout.length}개 (${(totalOut/1e8).toFixed(4)} BTC) · ` +
       `수수료 ${tx.fee?.toLocaleString()} sat`;
-  } catch (e) { document.getElementById('viz-info').textContent = '데이터 로드 실패: ' + e.message; }
+  } catch (e) { console.error('vizTx error:', e); document.getElementById('viz-info').textContent = '데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.'; }
   showLoading(false);
 }
 
@@ -85,12 +87,12 @@ async function vizAddress(address) {
   showLoading(true);
   document.getElementById('viz-info').textContent = '';
   try {
-    const txs = await fetch(`${API}/address/${address}/txs`, {signal: AbortSignal.timeout(10000)}).then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
+    const txs = await fetchRetry(`${API}/address/${address}/txs`,10000).then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
     window._currentData = { type: 'address', address, txs: txs.slice(0, 10) };
     renderGraph(window._currentData);
     document.getElementById('viz-info').innerHTML =
       `<b style="color:var(--accent)">${address.slice(0,20)}…</b> · 최근 ${Math.min(txs.length,10)}개 TX 시각화`;
-  } catch (e) { document.getElementById('viz-info').textContent = '데이터 로드 실패: ' + e.message; }
+  } catch (e) { console.error('vizAddress error:', e); document.getElementById('viz-info').textContent = '데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.'; }
   showLoading(false);
 }
 
@@ -186,7 +188,7 @@ function renderGraph(data) {
   const tooltip = document.getElementById('tooltip');
   node.on('mouseover', (e, d) => {
     const btc = d.value ? (d.value/1e8).toFixed(4) + ' BTC' : '';
-    tooltip.innerHTML = `<b style="color:${colorMap[d.type]}">${d.type.toUpperCase()}</b><br>${d.addr || d.label}${btc ? '<br>' + btc : ''}`;
+    tooltip.innerHTML = `<b style="color:${colorMap[d.type]}">${escHtml(d.type.toUpperCase())}</b><br>${escHtml(d.addr || d.label)}${btc ? '<br>' + btc : ''}`;
     tooltip.style.display = 'block';
   }).on('mousemove', e => {
     tooltip.style.left = (e.offsetX + 14) + 'px';
