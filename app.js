@@ -23,19 +23,32 @@ function toggleLang(){const m=document.getElementById('lang-menu');m?.classList.
 document.addEventListener('click',e=>{const m=document.getElementById('lang-menu');if(m&&!e.target.closest('.lang-dropdown')){m.classList.remove('open');document.getElementById('lang-btn')?.setAttribute('aria-expanded','false');}});
 (function(){setLang(lang);})();
 
+const T = {
+  invalidInput: { ko:'유효한 TXID(64자 hex) 또는 비트코인 주소를 입력하세요.', en:'Enter a valid TXID (64-char hex) or Bitcoin address.', ja:'有効なTXID（64文字hex）またはビットコインアドレスを入力してください。' },
+  dataLoadFailed: { ko:'데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.', en:'Failed to load data. Please try again later.', ja:'データを読み込めませんでした。しばらくしてから再試行してください。' },
+  inputs: { ko:'입력', en:'Inputs', ja:'入力' },
+  outputs: { ko:'출력', en:'Outputs', ja:'出力' },
+  fee: { ko:'수수료', en:'Fee', ja:'手数料' },
+  recent: { ko:'최근', en:'Recent', ja:'最新' },
+  txViz: { ko:'개 TX 시각화', en:' TX visualized', ja:'件 TX 可視化' },
+  lightMode: { ko:'라이트 모드로 전환', en:'Switch to light mode', ja:'ライトモードに切替' },
+  darkMode: { ko:'다크 모드로 전환', en:'Switch to dark mode', ja:'ダークモードに切替' },
+};
+function t(key){ return (T[key]&&T[key][lang]) || (T[key]&&T[key].en) || key; }
+
 const API = 'https://mempool.space/api';
 
 (function() {
-  const t = localStorage.getItem('theme') || 'dark';
-  const isDark = t !== 'light';
-  document.documentElement.setAttribute('data-theme', t);
-  document.getElementById('theme-btn').innerHTML=isDark?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';document.getElementById('theme-btn').title=isDark?'라이트 모드로 전환':'다크 모드로 전환';
+  const th = localStorage.getItem('theme') || 'dark';
+  const isDark = th !== 'light';
+  document.documentElement.setAttribute('data-theme', th);
+  document.getElementById('theme-btn').innerHTML=isDark?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';document.getElementById('theme-btn').title=isDark?t('lightMode'):t('darkMode');
 })();
 function updateThemeBtn(){
   const btn=document.getElementById('theme-btn');if(!btn)return;
   const isDark=document.documentElement.getAttribute('data-theme')!=='light';
   btn.innerHTML=isDark?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-  btn.title=isDark?'라이트 모드로 전환':'다크 모드로 전환';
+  btn.title=isDark?t('lightMode'):t('darkMode');
 }
 function toggleTheme() {
   const h = document.documentElement;
@@ -52,7 +65,7 @@ async function loadViz() {
   if (!val) return;
   if (/^[0-9a-fA-F]{64}$/.test(val)) { await vizTx(val); }
   else if (/^(bc1|1|3)[a-zA-Z0-9]{25,62}$/.test(val)) { await vizAddress(val); }
-  else { document.getElementById('viz-info').textContent = '유효한 TXID(64자 hex) 또는 비트코인 주소를 입력하세요.'; }
+  else { document.getElementById('viz-info').textContent = t('invalidInput'); }
 }
 
 async function loadDemo() {
@@ -61,7 +74,8 @@ async function loadDemo() {
 }
 
 function showLoading(v) {
-  document.getElementById('viz-loading').style.display = v ? 'flex' : 'none';
+  const el = document.getElementById('viz-loading');
+  if (v) el.classList.remove('hidden'); else el.classList.add('hidden');
 }
 
 async function vizTx(txid) {
@@ -75,11 +89,11 @@ async function vizTx(txid) {
     const totalIn = tx.vin.reduce((s, v) => s + (v.prevout?.value || 0), 0);
     const totalOut = tx.vout.reduce((s, v) => s + (v.value || 0), 0);
     document.getElementById('viz-info').innerHTML =
-      `<b style="color:var(--accent)">${txid.slice(0,16)}…</b> · ` +
-      `입력 ${tx.vin.length}개 (${(totalIn/1e8).toFixed(4)} BTC) → ` +
-      `출력 ${tx.vout.length}개 (${(totalOut/1e8).toFixed(4)} BTC) · ` +
-      `수수료 ${tx.fee?.toLocaleString()} sat`;
-  } catch (e) { console.error('vizTx error:', e); document.getElementById('viz-info').textContent = '데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.'; }
+      `<b class="viz-info-accent">${txid.slice(0,16)}…</b> · ` +
+      `${t('inputs')} ${tx.vin.length} (${(totalIn/1e8).toFixed(4)} BTC) → ` +
+      `${t('outputs')} ${tx.vout.length} (${(totalOut/1e8).toFixed(4)} BTC) · ` +
+      `${t('fee')} ${tx.fee?.toLocaleString()} sat`;
+  } catch (e) { console.error('vizTx error:', e); document.getElementById('viz-info').textContent = t('dataLoadFailed'); }
   showLoading(false);
 }
 
@@ -91,8 +105,8 @@ async function vizAddress(address) {
     window._currentData = { type: 'address', address, txs: txs.slice(0, 10) };
     renderGraph(window._currentData);
     document.getElementById('viz-info').innerHTML =
-      `<b style="color:var(--accent)">${address.slice(0,20)}…</b> · 최근 ${Math.min(txs.length,10)}개 TX 시각화`;
-  } catch (e) { console.error('vizAddress error:', e); document.getElementById('viz-info').textContent = '데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.'; }
+      `<b class="viz-info-accent">${address.slice(0,20)}…</b> · ${t('recent')} ${Math.min(txs.length,10)}${t('txViz')}`;
+  } catch (e) { console.error('vizAddress error:', e); document.getElementById('viz-info').textContent = t('dataLoadFailed'); }
   showLoading(false);
 }
 
@@ -113,7 +127,7 @@ function renderGraph(data) {
     tx.vin.slice(0, 10).forEach((v, i) => {
       const addr = v.coinbase ? 'Coinbase' : (v.prevout?.scriptpubkey_address || `input-${i}`);
       const id = `in-${i}`;
-      nodes.push({ id, label: addr === 'Coinbase' ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle"><path d="M15 4l5 5-11 11H4v-5L15 4z"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Coinbase' : addr.slice(0,10)+'…', type: 'input', value: v.prevout?.value || 0, addr });
+      nodes.push({ id, label: addr === 'Coinbase' ? 'Coinbase' : addr.slice(0,10)+'…', type: 'input', value: v.prevout?.value || 0, addr });
       links.push({ source: id, target: 'tx', value: v.prevout?.value || 0 });
     });
     // 출력 노드
@@ -186,14 +200,16 @@ function renderGraph(data) {
 
   // 툴팁
   const tooltip = document.getElementById('tooltip');
+  const typeClassMap = { tx:'tooltip-type-tx', input:'tooltip-type-input', output:'tooltip-type-output', address:'tooltip-type-address' };
   node.on('mouseover', (e, d) => {
     const btc = d.value ? (d.value/1e8).toFixed(4) + ' BTC' : '';
-    tooltip.innerHTML = `<b style="color:${colorMap[d.type]}">${escHtml(d.type.toUpperCase())}</b><br>${escHtml(d.addr || d.label)}${btc ? '<br>' + btc : ''}`;
-    tooltip.style.display = 'block';
+    const cls = typeClassMap[d.type] || '';
+    tooltip.innerHTML = `<b class="tooltip-type ${cls}">${escHtml(d.type.toUpperCase())}</b><br>${escHtml(d.addr || d.label)}${btc ? '<br>' + btc : ''}`;
+    tooltip.classList.add('tooltip-visible');
   }).on('mousemove', e => {
-    tooltip.style.left = (e.offsetX + 14) + 'px';
-    tooltip.style.top = (e.offsetY - 10) + 'px';
-  }).on('mouseout', () => { tooltip.style.display = 'none'; })
+    tooltip.style.setProperty('--tx', (e.offsetX + 14) + 'px');
+    tooltip.style.setProperty('--ty', (e.offsetY - 10) + 'px');
+  }).on('mouseout', () => { tooltip.classList.remove('tooltip-visible'); })
     .on('click', (e, d) => {
       if (d._dragged) return; // 드래그 후 click 무시
       if (d.type === 'tx') {
@@ -217,7 +233,7 @@ function renderGraph(data) {
     node.attr('transform', d=>`translate(${d.x},${d.y})`);
   });
 
-  document.getElementById('viz-legend').style.display = 'flex';
+  document.getElementById('viz-legend').classList.remove('hidden');
 }
 
 // URL 파라미터 자동 실행
@@ -227,3 +243,13 @@ function renderGraph(data) {
   if (tx) { document.getElementById('search-input').value = tx; vizTx(tx); }
   else if (addr) { document.getElementById('search-input').value = addr; vizAddr(addr); }
 })();
+
+// ── 이벤트 리스너 바인딩 ──
+document.getElementById('lang-btn').addEventListener('click', toggleLang);
+document.querySelectorAll('#lang-menu button').forEach(function(btn) {
+  var lang = btn.textContent === '한국어' ? 'ko' : btn.textContent === 'English' ? 'en' : 'ja';
+  btn.addEventListener('click', function() { setLang(lang); });
+});
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+document.getElementById('viz-btn').addEventListener('click', loadViz);
+document.getElementById('demo-btn').addEventListener('click', loadDemo);
