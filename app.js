@@ -16,7 +16,10 @@ function setLang(l){
   document.getElementById('lang-menu')?.classList.remove('open');
   document.querySelectorAll('[data-ko]').forEach(el=>{
     const val=el.dataset[lang]||el.dataset.en||el.dataset.ko;
-    if(val) el.textContent=val;
+    if(val){
+      if(el.placeholder!==undefined) el.placeholder=val;
+      else el.textContent=val;
+    }
   });
 }
 function toggleLang(){const m=document.getElementById('lang-menu');m?.classList.toggle('open');document.getElementById('lang-btn')?.setAttribute('aria-expanded',m?.classList.contains('open')||false);}

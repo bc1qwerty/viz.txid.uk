@@ -71,28 +71,28 @@
 <main id="main">
   <div class="hero">
     <h1>TX <span class="accent">Visualizer</span></h1>
-    <p class="hero-sub">트랜잭션 입출력 흐름을 네트워크 그래프로 시각화</p>
+    <p class="hero-sub" data-ko="트랜잭션 입출력 흐름을 네트워크 그래프로 시각화" data-en="Visualize transaction input/output flows as a network graph" data-ja="トランザクションの入出力フローをネットワークグラフで可視化">트랜잭션 입출력 흐름을 네트워크 그래프로 시각화</p>
   </div>
 
   <div class="search-wrap">
-    <input id="tx-input" class="search-input" placeholder="TXID 입력 (64자 hex) 또는 주소 입력" aria-label="TXID 또는 주소 입력" spellcheck="false">
-    <button class="search-btn" id="viz-btn">시각화</button>
-    <button class="search-btn secondary" id="demo-btn">데모</button>
+    <input id="tx-input" class="search-input" placeholder="TXID 입력 (64자 hex) 또는 주소 입력" data-ko="TXID 입력 (64자 hex) 또는 주소 입력" data-en="Enter TXID (64-char hex) or address" data-ja="TXID入力 (64桁hex) またはアドレス入力" aria-label="TXID 또는 주소 입력" spellcheck="false">
+    <button class="search-btn" id="viz-btn" data-ko="시각화" data-en="Visualize" data-ja="可視化">시각화</button>
+    <button class="search-btn secondary" id="demo-btn" data-ko="데모" data-en="Demo" data-ja="デモ">데모</button>
   </div>
 
   <div id="viz-info" class="viz-info"></div>
   <div id="viz-loading" class="viz-loading hidden">
-    <div class="spinner"></div><span>데이터 로딩 중…</span>
+    <div class="spinner"></div><span data-ko="데이터 로딩 중…" data-en="Loading data..." data-ja="データ読み込み中…">데이터 로딩 중…</span>
   </div>
   <div id="viz-container">
     <svg id="viz-svg"></svg>
     <div id="tooltip" class="tooltip"></div>
   </div>
   <div id="viz-legend" class="viz-legend hidden">
-    <div class="legend-item"><span class="legend-dot legend-dot-input"></span> 입력 (Input)</div>
-    <div class="legend-item"><span class="legend-dot legend-dot-output"></span> 출력 (Output)</div>
-    <div class="legend-item"><span class="legend-dot legend-dot-tx"></span> 현재 TX</div>
-    <div class="legend-item"><span class="legend-dot legend-dot-address"></span> 주소 노드</div>
+    <div class="legend-item"><span class="legend-dot legend-dot-input"></span> <span data-ko="입력 (Input)" data-en="Input" data-ja="入力 (Input)">입력 (Input)</span></div>
+    <div class="legend-item"><span class="legend-dot legend-dot-output"></span> <span data-ko="출력 (Output)" data-en="Output" data-ja="出力 (Output)">출력 (Output)</span></div>
+    <div class="legend-item"><span class="legend-dot legend-dot-tx"></span> <span data-ko="현재 TX" data-en="Current TX" data-ja="現在のTX">현재 TX</span></div>
+    <div class="legend-item"><span class="legend-dot legend-dot-address"></span> <span data-ko="주소 노드" data-en="Address Node" data-ja="アドレスノード">주소 노드</span></div>
   </div>
 </main>
 
