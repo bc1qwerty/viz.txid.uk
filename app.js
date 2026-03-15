@@ -10,7 +10,7 @@ const LABELS = {
   ja: {탐색기:'探索', 도구:'ツール', 시각화:'可視化', 통계:'統計', 노드:'ノード', 지도:'地図', 포트폴리오:'資産', 전송:'送金', 배우기:'学習', 앱모음:'アプリ'},
 };
 function setLang(l){
-  lang=l; localStorage.setItem('lang',lang);
+  lang=l; localStorage.setItem('lang',lang); document.documentElement.lang=lang;
   const btn=document.getElementById('lang-btn');
   if(btn) btn.textContent={ko:'KO',en:'EN',ja:'JA'}[lang]||'KO';
   document.getElementById('lang-menu')?.classList.remove('open');
