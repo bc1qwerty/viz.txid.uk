@@ -36,6 +36,7 @@ import '../styles/global.css';
     <div id="viz-loading" class="viz-loading hidden">
       <div class="spinner"></div><span data-ko="데이터 로딩 중…" data-en="Loading data..." data-ja="データ読み込み中…">데이터 로딩 중…</span>
     </div>
+    <div id="viz-hint" class="viz-hint" data-ko="TXID 또는 주소를 입력하고 시각화 버튼을 클릭하세요" data-en="Enter a TXID or address and click Visualize" data-ja="TXIDまたはアドレスを入力して可視化ボタンをクリック">TXID 또는 주소를 입력하고 시각화 버튼을 클릭하세요</div>
     <div id="viz-container">
       <svg id="viz-svg"></svg>
       <div id="tooltip" class="tooltip"></div>
@@ -152,6 +153,7 @@ import '../styles/global.css';
     }
 
     async function vizTx(txid: string) {
+      document.getElementById('viz-hint')?.remove();
       showLoading(true);
       document.getElementById('viz-info')!.textContent = '';
       try {
@@ -176,6 +178,7 @@ import '../styles/global.css';
     }
 
     async function vizAddress(address: string) {
+      document.getElementById('viz-hint')?.remove();
       showLoading(true);
       document.getElementById('viz-info')!.textContent = '';
       try {
