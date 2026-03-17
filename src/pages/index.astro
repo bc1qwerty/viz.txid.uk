@@ -1,0 +1,394 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import AppBar from '../components/AppBar.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+---
+
+<Base
+  title="Bitcoin Transaction Visualizer — TX Network Graph | txid.uk"
+  description="Visualize Bitcoin transaction input/output relationships as an interactive D3 force graph. TXID 또는 주소로 트랜잭션 네트워크를 시각화합니다."
+>
+  <Header />
+
+  <div class="learn-links" id="learn-links">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-noshrink" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    <span class="learn-label" data-ko="더 알아보기" data-en="Learn more" data-ja="もっと学ぶ">더 알아보기</span>
+    <a class="learn-chip" data-slug="what-is-txid" data-ko="TXID란 무엇인가" data-en="What is a TXID?" data-ja="TXIDとは" href="https://learn.txid.uk/ko/blog/what-is-txid/" target="_blank" rel="noopener">TXID란 무엇인가</a>
+    <a class="learn-chip" data-slug="how-to-read-bitcoin-transaction" data-ko="트랜잭션 읽는 법" data-en="Reading Transactions" data-ja="トランザクションの読み方" href="https://learn.txid.uk/ko/blog/how-to-read-bitcoin-transaction/" target="_blank" rel="noopener">트랜잭션 읽는 법</a>
+    <a class="learn-chip" data-slug="utxo-model" data-ko="UTXO 모델" data-en="UTXO Model" data-ja="UTXOモデル" href="https://learn.txid.uk/ko/blog/utxo-model/" target="_blank" rel="noopener">UTXO 모델</a>
+  </div>
+
+  <main id="main">
+    <div class="hero">
+      <h1>TX <span class="accent">Visualizer</span></h1>
+      <p class="hero-sub" data-ko="트랜잭션 입출력 흐름을 네트워크 그래프로 시각화" data-en="Visualize transaction input/output flows as a network graph" data-ja="トランザクションの入出力フローをネットワークグラフで可視化">트랜잭션 입출력 흐름을 네트워크 그래프로 시각화</p>
+    </div>
+
+    <div class="search-wrap">
+      <input id="tx-input" class="search-input" placeholder="TXID 입력 (64자 hex) 또는 주소 입력" data-ko="TXID 입력 (64자 hex) 또는 주소 입력" data-en="Enter TXID (64-char hex) or address" data-ja="TXID入力 (64桁hex) またはアドレス入力" aria-label="TXID 또는 주소 입력" spellcheck="false">
+      <button class="search-btn" id="viz-btn" data-ko="시각화" data-en="Visualize" data-ja="可視化">시각화</button>
+      <button class="search-btn secondary" id="demo-btn" data-ko="데모" data-en="Demo" data-ja="デモ">데모</button>
+    </div>
+
+    <div id="viz-info" class="viz-info"></div>
+    <div id="viz-loading" class="viz-loading hidden">
+      <div class="spinner"></div><span data-ko="데이터 로딩 중…" data-en="Loading data..." data-ja="データ読み込み中…">데이터 로딩 중…</span>
+    </div>
+    <div id="viz-container">
+      <svg id="viz-svg"></svg>
+      <div id="tooltip" class="tooltip"></div>
+    </div>
+    <div id="viz-legend" class="viz-legend hidden">
+      <div class="legend-item"><span class="legend-dot legend-dot-input"></span> <span data-ko="입력 (Input)" data-en="Input" data-ja="入力 (Input)">입력 (Input)</span></div>
+      <div class="legend-item"><span class="legend-dot legend-dot-output"></span> <span data-ko="출력 (Output)" data-en="Output" data-ja="出力 (Output)">출력 (Output)</span></div>
+      <div class="legend-item"><span class="legend-dot legend-dot-tx"></span> <span data-ko="현재 TX" data-en="Current TX" data-ja="現在のTX">현재 TX</span></div>
+      <div class="legend-item"><span class="legend-dot legend-dot-address"></span> <span data-ko="주소 노드" data-en="Address Node" data-ja="アドレスノード">주소 노드</span></div>
+    </div>
+  </main>
+
+  <AppBar />
+  <Footer />
+
+  <script>
+    // d3 is loaded globally via CDN in <head>
+    declare const d3: any;
+
+    function escHtml(s: string) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function fetchRetry(url: string, timeout?: number, retries?: number) {
+      for (let i = 0, m = retries || 2; i <= m; i++) {
+        try {
+          return await fetch(url, { signal: AbortSignal.timeout(timeout || 10000) });
+        } catch (e) {
+          if (i >= m) throw e;
+          await new Promise(r => setTimeout(r, 1000 << i));
+        }
+      }
+      throw new Error('fetchRetry exhausted');
+    }
+
+    // ── i18n ──
+    let _lang = localStorage.getItem('lang') || 'ko';
+
+    const T: Record<string, Record<string, string>> = {
+      invalidInput: { ko: '유효한 TXID(64자 hex) 또는 비트코인 주소를 입력하세요.', en: 'Enter a valid TXID (64-char hex) or Bitcoin address.', ja: '有効なTXID（64文字hex）またはビットコインアドレスを入力してください。' },
+      dataLoadFailed: { ko: '데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.', en: 'Failed to load data. Please try again later.', ja: 'データを読み込めませんでした。しばらくしてから再試行してください。' },
+      inputs: { ko: '입력', en: 'Inputs', ja: '入力' },
+      outputs: { ko: '출력', en: 'Outputs', ja: '出力' },
+      fee: { ko: '수수료', en: 'Fee', ja: '手数料' },
+      recent: { ko: '최근', en: 'Recent', ja: '最新' },
+      txViz: { ko: '개 TX 시각화', en: ' TX visualized', ja: '件 TX 可視化' },
+      lightMode: { ko: '라이트 모드로 전환', en: 'Switch to light mode', ja: 'ライトモードに切替' },
+      darkMode: { ko: '다크 모드로 전환', en: 'Switch to dark mode', ja: 'ダークモードに切替' },
+    };
+    function t(key: string) { return T[key]?.[_lang] || T[key]?.en || key; }
+
+    function setLang(l: string) {
+      _lang = l;
+      localStorage.setItem('lang', _lang);
+      document.documentElement.lang = _lang;
+      const btn = document.getElementById('lang-btn');
+      if (btn) btn.textContent = ({ ko: 'KO', en: 'EN', ja: 'JA' } as Record<string, string>)[_lang] || 'KO';
+      document.getElementById('lang-menu')?.classList.remove('open');
+      document.querySelectorAll<HTMLElement>('[data-ko]').forEach((el) => {
+        const val = el.dataset[_lang] || el.dataset.en || el.dataset.ko;
+        if (val) {
+          if ('placeholder' in el && (el as HTMLInputElement).placeholder !== undefined) {
+            (el as HTMLInputElement).placeholder = val;
+          } else {
+            el.textContent = val;
+          }
+        }
+      });
+      updateThemeBtn();
+    }
+
+    // ── Theme ──
+    const sunSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>';
+    const moonSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    const sunSvgSm = sunSvg.replace(/width="15" height="15"/g, 'width="14" height="14"');
+    const moonSvgSm = moonSvg.replace(/width="15" height="15"/g, 'width="14" height="14"');
+
+    function updateThemeBtn() {
+      const btn = document.getElementById('theme-btn');
+      if (!btn) return;
+      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+      btn.innerHTML = isDark ? sunSvg : moonSvg;
+      btn.title = isDark ? t('lightMode') : t('darkMode');
+    }
+
+    function toggleTheme() {
+      const h = document.documentElement;
+      const next = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      h.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateThemeBtn();
+      if ((window as any)._currentTxid) renderGraph((window as any)._currentData);
+    }
+
+    // ── Viz logic ──
+    const API = 'https://mempool.space/api';
+
+    function showLoading(v: boolean) {
+      const el = document.getElementById('viz-loading');
+      if (v) el?.classList.remove('hidden'); else el?.classList.add('hidden');
+    }
+
+    async function loadViz() {
+      const val = (document.getElementById('tx-input') as HTMLInputElement).value.trim();
+      if (!val) return;
+      if (/^[0-9a-fA-F]{64}$/.test(val)) { await vizTx(val); }
+      else if (/^(bc1|1|3)[a-zA-Z0-9]{25,62}$/.test(val)) { await vizAddress(val); }
+      else { document.getElementById('viz-info')!.textContent = t('invalidInput'); }
+    }
+
+    async function loadDemo() {
+      (document.getElementById('tx-input') as HTMLInputElement).value = 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16';
+      await vizTx('f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16');
+    }
+
+    async function vizTx(txid: string) {
+      showLoading(true);
+      document.getElementById('viz-info')!.textContent = '';
+      try {
+        const resp = await fetchRetry(`${API}/tx/${txid}`, 10000);
+        if (!resp || !resp.ok) throw new Error('HTTP ' + resp?.status);
+        const tx = await resp.json();
+        (window as any)._currentTxid = txid;
+        (window as any)._currentData = { type: 'tx', tx };
+        renderGraph({ type: 'tx', tx });
+        const totalIn = tx.vin.reduce((s: number, v: any) => s + (v.prevout?.value || 0), 0);
+        const totalOut = tx.vout.reduce((s: number, v: any) => s + (v.value || 0), 0);
+        document.getElementById('viz-info')!.innerHTML =
+          `<b class="viz-info-accent">${txid.slice(0, 16)}…</b> · ` +
+          `${t('inputs')} ${tx.vin.length} (${(totalIn / 1e8).toFixed(4)} BTC) → ` +
+          `${t('outputs')} ${tx.vout.length} (${(totalOut / 1e8).toFixed(4)} BTC) · ` +
+          `${t('fee')} ${tx.fee?.toLocaleString()} sat`;
+      } catch (e) {
+        console.error('vizTx error:', e);
+        document.getElementById('viz-info')!.textContent = t('dataLoadFailed');
+      }
+      showLoading(false);
+    }
+
+    async function vizAddress(address: string) {
+      showLoading(true);
+      document.getElementById('viz-info')!.textContent = '';
+      try {
+        const resp = await fetchRetry(`${API}/address/${address}/txs`, 10000);
+        if (!resp || !resp.ok) throw new Error('HTTP ' + resp?.status);
+        const txs = await resp.json();
+        (window as any)._currentData = { type: 'address', address, txs: txs.slice(0, 10) };
+        renderGraph((window as any)._currentData);
+        document.getElementById('viz-info')!.innerHTML =
+          `<b class="viz-info-accent">${address.slice(0, 20)}…</b> · ${t('recent')} ${Math.min(txs.length, 10)}${t('txViz')}`;
+      } catch (e) {
+        console.error('vizAddress error:', e);
+        document.getElementById('viz-info')!.textContent = t('dataLoadFailed');
+      }
+      showLoading(false);
+    }
+
+    function renderGraph(data: any) {
+      const svg = d3.select('#viz-svg');
+      svg.selectAll('*').remove();
+      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+      const W = document.getElementById('viz-container')!.clientWidth;
+      const H = document.getElementById('viz-container')!.clientHeight;
+
+      const nodes: any[] = [], links: any[] = [];
+
+      if (data.type === 'tx') {
+        const { tx } = data;
+        nodes.push({ id: 'tx', label: tx.txid.slice(0, 8) + '…', type: 'tx', value: tx.fee || 0, txid: tx.txid });
+        tx.vin.slice(0, 10).forEach((v: any, i: number) => {
+          const addr = v.coinbase ? 'Coinbase' : (v.prevout?.scriptpubkey_address || `input-${i}`);
+          const id = `in-${i}`;
+          nodes.push({ id, label: addr === 'Coinbase' ? 'Coinbase' : addr.slice(0, 10) + '…', type: 'input', value: v.prevout?.value || 0, addr });
+          links.push({ source: id, target: 'tx', value: v.prevout?.value || 0 });
+        });
+        tx.vout.slice(0, 10).forEach((v: any, i: number) => {
+          const addr = v.scriptpubkey_address || `out-${i}`;
+          const id = `out-${i}`;
+          nodes.push({ id, label: addr.slice(0, 10) + '…', type: 'output', value: v.value || 0, addr });
+          links.push({ source: 'tx', target: id, value: v.value || 0 });
+        });
+      } else if (data.type === 'address') {
+        const { address, txs } = data;
+        nodes.push({ id: 'addr', label: address.slice(0, 10) + '…', type: 'address', value: 0 });
+        txs.forEach((tx: any, i: number) => {
+          const id = `tx-${i}`;
+          nodes.push({ id, label: tx.txid.slice(0, 8) + '…', type: 'tx', value: tx.fee || 0, txid: tx.txid });
+          links.push({ source: 'addr', target: id, value: tx.fee || 0 });
+        });
+      }
+
+      const colorMap: Record<string, string> = { tx: '#58a6ff', input: '#f7931a', output: '#3fb950', address: '#a371f7' };
+
+      const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id((d: any) => d.id).distance(120).strength(0.8))
+        .force('charge', d3.forceManyBody().strength(-400))
+        .force('center', d3.forceCenter(W / 2, H / 2))
+        .force('collision', d3.forceCollide().radius(40));
+
+      const g = svg.append('g');
+
+      svg.call(d3.zoom().scaleExtent([0.3, 3]).on('zoom', (e: any) => g.attr('transform', e.transform)));
+
+      svg.append('defs').selectAll('marker').data(['arrow']).join('marker')
+        .attr('id', 'arrow').attr('viewBox', '0 -5 10 10').attr('refX', 20).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto')
+        .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', isDark ? '#444c56' : '#b8c0cc');
+
+      const link = g.append('g').selectAll('line').data(links).join('line')
+        .attr('stroke', isDark ? '#30363d' : '#d0d7de')
+        .attr('stroke-width', (d: any) => Math.max(1, Math.log10((d.value || 1) / 1e6) + 2))
+        .attr('marker-end', 'url(#arrow)');
+
+      const node = g.append('g').selectAll('g').data(nodes).join('g')
+        .attr('cursor', 'pointer')
+        .call(d3.drag()
+          .on('start', (e: any, d: any) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; d._dragged = false; })
+          .on('drag', (e: any, d: any) => { d.fx = e.x; d.fy = e.y; d._dragged = true; })
+          .on('end', (e: any, d: any) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+      node.append('circle')
+        .attr('r', (d: any) => d.type === 'tx' ? 16 : 12)
+        .attr('fill', (d: any) => colorMap[d.type] || '#8b949e')
+        .attr('fill-opacity', 0.85)
+        .attr('stroke', isDark ? '#0d1117' : '#fff')
+        .attr('stroke-width', 2);
+
+      node.append('text')
+        .attr('text-anchor', 'middle').attr('dy', '0.35em')
+        .attr('font-family', "'Space Mono', monospace").attr('font-size', '6px')
+        .attr('fill', '#fff').attr('pointer-events', 'none')
+        .text((d: any) => d.type === 'tx' ? 'TX' : d.type === 'input' ? 'IN' : d.type === 'output' ? 'OUT' : '\u2B1F');
+
+      node.append('text')
+        .attr('text-anchor', 'middle').attr('dy', 26)
+        .attr('font-family', "'Space Mono', monospace").attr('font-size', '8px')
+        .attr('fill', isDark ? '#8b949e' : '#656d76').attr('pointer-events', 'none')
+        .text((d: any) => d.label);
+
+      const tooltip = document.getElementById('tooltip')!;
+      const typeClassMap: Record<string, string> = { tx: 'tooltip-type-tx', input: 'tooltip-type-input', output: 'tooltip-type-output', address: 'tooltip-type-address' };
+      node.on('mouseover', (_e: any, d: any) => {
+        const btc = d.value ? (d.value / 1e8).toFixed(4) + ' BTC' : '';
+        const cls = typeClassMap[d.type] || '';
+        tooltip.innerHTML = `<b class="tooltip-type ${cls}">${escHtml(d.type.toUpperCase())}</b><br>${escHtml(d.addr || d.label)}${btc ? '<br>' + btc : ''}`;
+        tooltip.classList.add('tooltip-visible');
+      }).on('mousemove', (e: any) => {
+        tooltip.style.setProperty('--tx', (e.offsetX + 14) + 'px');
+        tooltip.style.setProperty('--ty', (e.offsetY - 10) + 'px');
+      }).on('mouseout', () => { tooltip.classList.remove('tooltip-visible'); })
+        .on('click', (_e: any, d: any) => {
+          if (d._dragged) return;
+          if (d.type === 'tx') {
+            const txid = d.txid || (d.id === 'tx' ? (window as any)._currentTxid : null);
+            if (!txid || !/^[0-9a-fA-F]{64}$/.test(txid)) return;
+            if (txid === (window as any)._currentTxid && data.type === 'tx') {
+              window.open(`https://txid.uk/#/tx/${txid}`, '_blank');
+            } else {
+              (document.getElementById('tx-input') as HTMLInputElement).value = txid;
+              vizTx(txid);
+            }
+          } else if (d.addr && /^(bc1|1|3)[a-zA-Z0-9]{25,62}$/.test(d.addr)) {
+            (document.getElementById('tx-input') as HTMLInputElement).value = d.addr;
+            vizAddress(d.addr);
+          }
+        });
+
+      simulation.on('tick', () => {
+        link.attr('x1', (d: any) => d.source.x).attr('y1', (d: any) => d.source.y).attr('x2', (d: any) => d.target.x).attr('y2', (d: any) => d.target.y);
+        node.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+      });
+
+      document.getElementById('viz-legend')?.classList.remove('hidden');
+    }
+
+    // ── URL params auto-execute ──
+    (function () {
+      const p = new URLSearchParams(location.search);
+      const tx = p.get('tx'), addr = p.get('addr');
+      if (tx) { (document.getElementById('tx-input') as HTMLInputElement).value = tx; vizTx(tx); }
+      else if (addr) { (document.getElementById('tx-input') as HTMLInputElement).value = addr; vizAddress(addr); }
+    })();
+
+    // ── Hamburger menu ──
+    function updateHamburger() {
+      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+      const icon = document.getElementById('hamburger-theme-icon');
+      if (icon) icon.innerHTML = isDark ? sunSvgSm : moonSvgSm;
+      document.querySelectorAll<HTMLElement>('#hamburger-panel .settings-lang-btn').forEach((b) => {
+        b.classList.toggle('active', b.dataset.lang === _lang);
+      });
+    }
+
+    // ── Init ──
+    (function init() {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      setLang(_lang);
+      updateThemeBtn();
+    })();
+
+    // ── Event listeners ──
+    function toggleLang() {
+      const m = document.getElementById('lang-menu');
+      m?.classList.toggle('open');
+      document.getElementById('lang-btn')?.setAttribute('aria-expanded', String(m?.classList.contains('open') || false));
+    }
+
+    document.getElementById('tx-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadViz(); });
+    document.getElementById('lang-btn')?.addEventListener('click', toggleLang);
+    document.querySelectorAll('#lang-menu button').forEach((btn) => {
+      const lang = btn.textContent === '한국어' ? 'ko' : btn.textContent === 'English' ? 'en' : 'ja';
+      btn.addEventListener('click', () => setLang(lang));
+    });
+    document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
+    document.getElementById('viz-btn')?.addEventListener('click', loadViz);
+    document.getElementById('demo-btn')?.addEventListener('click', loadDemo);
+
+    document.addEventListener('click', (e) => {
+      const m = document.getElementById('lang-menu');
+      if (m && !(e.target as HTMLElement).closest('.lang-dropdown')) {
+        m.classList.remove('open');
+        document.getElementById('lang-btn')?.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.getElementById('hamburger-btn')?.addEventListener('click', function () {
+      const panel = document.getElementById('hamburger-panel');
+      if (!panel) return;
+      const open = panel.classList.toggle('open');
+      this.setAttribute('aria-expanded', String(open));
+      if (open) updateHamburger();
+    });
+
+    document.addEventListener('click', (e) => {
+      const wrap = document.querySelector('.hamburger-wrap');
+      const panel = document.getElementById('hamburger-panel');
+      if (wrap && panel && !wrap.contains(e.target as Node)) {
+        panel.classList.remove('open');
+        document.getElementById('hamburger-btn')?.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.querySelectorAll<HTMLElement>('#hamburger-panel .settings-lang-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setLang(btn.dataset.lang!);
+        document.getElementById('hamburger-panel')?.classList.remove('open');
+        document.getElementById('hamburger-btn')?.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    document.getElementById('hamburger-theme-btn')?.addEventListener('click', () => {
+      toggleTheme();
+      updateHamburger();
+    });
+  </script>
+</Base>
