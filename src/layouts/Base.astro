@@ -30,6 +30,7 @@ const { title, description } = Astro.props;
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous" is:inline></script>
+  <script type="importmap" is:inline>{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
   <meta name="twitter:card" content="summary">
   <meta name="twitter:site" content="@bc1qwerty">
   <meta name="twitter:title" content={title}>
@@ -44,7 +45,7 @@ const { title, description } = Astro.props;
     "operatingSystem": "Any",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   })} />
-  <script src="https://apps.txid.uk/global-nav.js" crossorigin="anonymous" defer is:inline></script>
+  <script src="https://apps.txid.uk/global-nav-v2.js" crossorigin="anonymous" defer is:inline></script>
 </head>
 <body>
   <a href="#main" class="skip-link" data-ko="본문으로 건너뛰기" data-en="Skip to content" data-ja="本文へスキップ">본문으로 건너뛰기</a>
