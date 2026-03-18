@@ -2,24 +2,27 @@
 interface Props {
   title: string;
   description: string;
+  lang?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description, lang = 'ko' } = Astro.props;
+const site = 'https://viz.txid.uk';
+const canonicalUrl = `${site}/${lang}/`;
 ---
 
 <!DOCTYPE html>
-<html lang="ko" data-theme="dark">
+<html lang={lang} data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script is:inline>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark')</script>
   <title>{title}</title>
   <meta name="description" content={description}>
-  <link rel="canonical" href="https://viz.txid.uk/">
-  <link rel="alternate" hreflang="ko" href="https://viz.txid.uk/">
-  <link rel="alternate" hreflang="en" href="https://viz.txid.uk/">
-  <link rel="alternate" hreflang="ja" href="https://viz.txid.uk/">
-  <link rel="alternate" hreflang="x-default" href="https://viz.txid.uk/">
+  <link rel="canonical" href={canonicalUrl}>
+  <link rel="alternate" hreflang="ko" href={`${site}/ko/`}>
+  <link rel="alternate" hreflang="en" href={`${site}/en/`}>
+  <link rel="alternate" hreflang="ja" href={`${site}/ja/`}>
+  <link rel="alternate" hreflang="x-default" href={`${site}/en/`}>
   <meta name="keywords" content="bitcoin transaction visualizer, TXID graph, bitcoin network, 비트코인 트랜잭션 시각화">
   <meta name="theme-color" content="#f7931a">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -39,21 +42,22 @@ const { title, description } = Astro.props;
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "Bitcoin TX Visualizer",
-    "url": "https://viz.txid.uk",
+    "url": site,
     "description": "Visualize Bitcoin transaction network graphs",
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Any",
+    "inLanguage": lang,
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   })} />
-  <script src="https://apps.txid.uk/global-nav-v2.js" crossorigin="anonymous" defer is:inline></script>
+  <script src="/global-nav-v2.js" defer is:inline></script>
 </head>
 <body>
-  <a href="#main" class="skip-link" data-ko="본문으로 건너뛰기" data-en="Skip to content" data-ja="本文へスキップ">본문으로 건너뛰기</a>
+  <a href="#main" class="skip-link">{lang === 'en' ? 'Skip to content' : lang === 'ja' ? '本文へスキップ' : '본문으로 건너뛰기'}</a>
   <slot />
-  <script src="https://apps.txid.uk/learn-links.js" is:inline></script>
+
   <script src="https://api.txid.uk/txid-auth.js" crossorigin="anonymous" defer is:inline></script>
   <script data-goatcounter="https://txid.goatcounter.com/count" src="https://gc.zgo.at/count.js" async is:inline></script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XLKJMZYK2G" is:inline></script>
-  <script src="https://apps.txid.uk/gtag-init.js" data-ga-id="G-XLKJMZYK2G" is:inline></script>
+  <script src="/gtag-init.js" data-ga-id="G-XLKJMZYK2G" is:inline></script>
 </body>
 </html>

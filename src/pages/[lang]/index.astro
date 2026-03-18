@@ -1,0 +1,862 @@
+---
+import Base from '../../layouts/Base.astro';
+import Header from '@txid/ui/components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import '../../styles/global.css';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'ko' } },
+    { params: { lang: 'ja' } },
+  ];
+}
+
+const { lang } = Astro.params;
+
+const titles: Record<string, string> = {
+  ko: 'Bitcoin Visualizer — TX 그래프 & 3D 멤풀 | txid.uk',
+  en: 'Bitcoin Visualizer — TX Graph & 3D Mempool | txid.uk',
+  ja: 'Bitcoin Visualizer — TXグラフ & 3Dメンプール | txid.uk',
+};
+
+const descriptions: Record<string, string> = {
+  ko: '비트코인 트랜잭션을 인터랙티브 D3 포스 그래프로 시각화하고, 실시간 멤풀을 3D로 탐색하세요.',
+  en: 'Visualize Bitcoin transactions as an interactive D3 force graph and explore the live mempool in 3D with Three.js.',
+  ja: 'ビットコイントランザクションをインタラクティブなD3フォースグラフで可視化し、リアルタイムメンプールを3Dで探索。',
+};
+
+const i18n: Record<string, Record<string, string>> = {
+  learnMore: { ko: '더 알아보기', en: 'Learn more', ja: 'もっと学ぶ' },
+  txidChip: { ko: 'TXID란 무엇인가', en: 'What is a TXID?', ja: 'TXIDとは' },
+  readTxChip: { ko: '트랜잭션 읽는 법', en: 'Reading Transactions', ja: 'トランザクションの読み方' },
+  utxoChip: { ko: 'UTXO 모델', en: 'UTXO Model', ja: 'UTXOモデル' },
+  heroSub: { ko: '트랜잭션 그래프 & 실시간 3D 멤풀', en: 'TX Network Graph & Live 3D Mempool', ja: 'TXグラフ & リアルタイム3Dメンプール' },
+  tabTxGraph: { ko: 'TX 그래프', en: 'TX Graph', ja: 'TXグラフ' },
+  tabMempool: { ko: '3D 멤풀', en: '3D Mempool', ja: '3Dメンプール' },
+  inputPlaceholder: { ko: 'TXID 입력 (64자 hex) 또는 주소 입력', en: 'Enter TXID (64-char hex) or address', ja: 'TXID入力 (64桁hex) またはアドレス入力' },
+  visualize: { ko: '시각화', en: 'Visualize', ja: '可視化' },
+  demo: { ko: '데모', en: 'Demo', ja: 'デモ' },
+  loadingData: { ko: '데이터 로딩 중…', en: 'Loading data...', ja: 'データ読み込み中…' },
+  vizHint: { ko: 'TXID 또는 주소를 입력하고 시각화 버튼을 클릭하세요', en: 'Enter a TXID or address and click Visualize', ja: 'TXIDまたはアドレスを入力して可視化ボタンをクリック' },
+  legendInput: { ko: '입력 (Input)', en: 'Input', ja: '入力 (Input)' },
+  legendOutput: { ko: '출력 (Output)', en: 'Output', ja: '出力 (Output)' },
+  legendTx: { ko: '현재 TX', en: 'Current TX', ja: '現在のTX' },
+  legendAddress: { ko: '주소 노드', en: 'Address Node', ja: 'アドレスノード' },
+  totalTxs: { ko: '총 TX 수', en: 'Total TXs', ja: '総TX数' },
+  totalSize: { ko: '총 크기', en: 'Total Size', ja: '総サイズ' },
+  medianFeeRate: { ko: '중간 수수료율', en: 'Median Fee Rate', ja: '中央手数料率' },
+  shownTxs: { ko: '표시 TX', en: 'Shown TXs', ja: '表示TX' },
+  feeRate: { ko: '수수료율', en: 'Fee Rate', ja: '手数料率' },
+  feeLow: { ko: '낮음', en: 'Low', ja: '低' },
+  feeMed: { ko: '중간', en: 'Med', ja: '中' },
+  feeHigh: { ko: '높음', en: 'High', ja: '高' },
+  controlsHint: { ko: '마우스 드래그: 회전 · 스크롤: 줌 · 우클릭: 이동', en: 'Drag: Rotate · Scroll: Zoom · Right-click: Pan', ja: 'ドラッグ: 回転 · スクロール: ズーム · 右クリック: パン' },
+};
+
+const tx = (key: string) => i18n[key]?.[lang!] || i18n[key]?.en || key;
+const learnLangPrefix = lang === 'en' ? 'en' : lang === 'ja' ? 'ja' : 'ko';
+---
+
+<Base
+  title={titles[lang!] || titles.en}
+  description={descriptions[lang!] || descriptions.en}
+  lang={lang!}
+>
+  <Header sub="Viz" />
+
+  <div class="learn-links" id="learn-links">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-noshrink" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    <span class="learn-label">{tx('learnMore')}</span>
+    <a class="learn-chip" data-slug="what-is-txid" href={`https://learn.txid.uk/${learnLangPrefix}/blog/what-is-txid/`} target="_blank" rel="noopener">{tx('txidChip')}</a>
+    <a class="learn-chip" data-slug="how-to-read-bitcoin-transaction" href={`https://learn.txid.uk/${learnLangPrefix}/blog/how-to-read-bitcoin-transaction/`} target="_blank" rel="noopener">{tx('readTxChip')}</a>
+    <a class="learn-chip" data-slug="utxo-model" href={`https://learn.txid.uk/${learnLangPrefix}/blog/utxo-model/`} target="_blank" rel="noopener">{tx('utxoChip')}</a>
+  </div>
+
+  <main id="main">
+    <div class="hero">
+      <h1>Bitcoin <span class="accent">Visualizer</span></h1>
+      <p class="hero-sub">{tx('heroSub')}</p>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-txgraph">{tx('tabTxGraph')}</button>
+      <button class="tab-btn" id="tab-mempool3d">{tx('tabMempool')}</button>
+    </div>
+
+    <!-- ===== TX Graph Panel ===== -->
+    <div id="panel-txgraph" class="viz-panel">
+      <div class="search-wrap">
+        <input id="tx-input" class="search-input" placeholder={tx('inputPlaceholder')} aria-label={tx('inputPlaceholder')} spellcheck="false">
+        <button class="search-btn" id="viz-btn">{tx('visualize')}</button>
+        <button class="search-btn secondary" id="demo-btn">{tx('demo')}</button>
+      </div>
+
+      <div id="viz-info" class="viz-info" aria-live="polite"></div>
+      <div id="viz-loading" class="viz-loading hidden">
+        <div class="spinner"></div><span>{tx('loadingData')}</span>
+      </div>
+      <div id="viz-hint" class="viz-hint">{tx('vizHint')}</div>
+      <div id="viz-container">
+        <svg id="viz-svg"></svg>
+        <div id="tooltip" class="tooltip"></div>
+      </div>
+      <div id="viz-legend" class="viz-legend hidden">
+        <div class="legend-item"><span class="legend-dot legend-dot-input"></span> <span>{tx('legendInput')}</span></div>
+        <div class="legend-item"><span class="legend-dot legend-dot-output"></span> <span>{tx('legendOutput')}</span></div>
+        <div class="legend-item"><span class="legend-dot legend-dot-tx"></span> <span>{tx('legendTx')}</span></div>
+        <div class="legend-item"><span class="legend-dot legend-dot-address"></span> <span>{tx('legendAddress')}</span></div>
+      </div>
+    </div>
+
+    <!-- ===== 3D Mempool Panel ===== -->
+    <div id="panel-mempool3d" class="viz-panel hidden">
+      <div id="mempool-stats" class="mempool-stats" aria-live="polite">
+        <div class="mempool-stat-card">
+          <span class="mempool-stat-label">{tx('totalTxs')}</span>
+          <span class="mempool-stat-value" id="stat-tx-count">--</span>
+        </div>
+        <div class="mempool-stat-card">
+          <span class="mempool-stat-label">{tx('totalSize')}</span>
+          <span class="mempool-stat-value" id="stat-total-size">--</span>
+        </div>
+        <div class="mempool-stat-card">
+          <span class="mempool-stat-label">{tx('medianFeeRate')}</span>
+          <span class="mempool-stat-value" id="stat-median-fee">--</span>
+        </div>
+        <div class="mempool-stat-card">
+          <span class="mempool-stat-label">{tx('shownTxs')}</span>
+          <span class="mempool-stat-value" id="stat-shown-count">--</span>
+        </div>
+      </div>
+      <div id="mempool-container">
+        <canvas id="mempool-canvas"></canvas>
+        <div id="mempool-tooltip" class="mempool-tooltip"></div>
+        <div class="mempool-legend">
+          <span class="mempool-legend-title">{tx('feeRate')}</span>
+          <div class="mempool-legend-bar"></div>
+          <div class="mempool-legend-labels">
+            <span>{tx('feeLow')}</span>
+            <span>{tx('feeMed')}</span>
+            <span>{tx('feeHigh')}</span>
+          </div>
+        </div>
+        <div class="mempool-controls-hint">{tx('controlsHint')}</div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+
+  <script define:vars={{ pageLang: lang }}>
+    window.__pageLang = pageLang;
+  </script>
+
+  <script>
+    // d3 is loaded globally via CDN in <head>
+    declare const d3: any;
+
+    function escHtml(s: string) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function fetchRetry(url: string, timeout?: number, retries?: number) {
+      for (let i = 0, m = retries || 2; i <= m; i++) {
+        try {
+          return await fetch(url, { signal: AbortSignal.timeout(timeout || 10000) });
+        } catch (e) {
+          if (i >= m) throw e;
+          await new Promise(r => setTimeout(r, 1000 << i));
+        }
+      }
+      throw new Error('fetchRetry exhausted');
+    }
+
+    // ── i18n ──
+    const pageLang = (window as any).__pageLang || 'ko';
+    let _lang = localStorage.getItem('lang') || pageLang;
+
+    const T: Record<string, Record<string, string>> = {
+      invalidInput: { ko: '유효한 TXID(64자 hex) 또는 비트코인 주소를 입력하세요.', en: 'Enter a valid TXID (64-char hex) or Bitcoin address.', ja: '有効なTXID（64文字hex）またはビットコインアドレスを入力してください。' },
+      dataLoadFailed: { ko: '데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.', en: 'Failed to load data. Please try again later.', ja: 'データを読み込めませんでした。しばらくしてから再試行してください。' },
+      inputs: { ko: '입력', en: 'Inputs', ja: '入力' },
+      outputs: { ko: '출력', en: 'Outputs', ja: '出力' },
+      fee: { ko: '수수료', en: 'Fee', ja: '手数料' },
+      recent: { ko: '최근', en: 'Recent', ja: '最新' },
+      txViz: { ko: '개 TX 시각화', en: ' TX visualized', ja: '件 TX 可視化' },
+      lightMode: { ko: '라이트 모드로 전환', en: 'Switch to light mode', ja: 'ライトモードに切替' },
+      darkMode: { ko: '다크 모드로 전환', en: 'Switch to dark mode', ja: 'ダークモードに切替' },
+    };
+    function t(key: string) { return T[key]?.[_lang] || T[key]?.en || key; }
+
+    function setLang(l: string) {
+      _lang = l;
+      localStorage.setItem('lang', _lang);
+      // Navigate to the correct language page
+      const target = '/' + _lang + '/';
+      if (window.location.pathname !== target) {
+        window.location.href = target;
+        return;
+      }
+      document.documentElement.lang = _lang;
+      const btn = document.getElementById('lang-btn');
+      if (btn) btn.textContent = ({ ko: 'KO', en: 'EN', ja: 'JA' } as Record<string, string>)[_lang] || 'KO';
+      document.getElementById('lang-menu')?.classList.remove('open');
+      document.querySelectorAll<HTMLElement>('[data-ko]').forEach((el) => {
+        const val = el.dataset[_lang] || el.dataset.en || el.dataset.ko;
+        if (val) {
+          if ('placeholder' in el && (el as HTMLInputElement).placeholder !== undefined) {
+            (el as HTMLInputElement).placeholder = val;
+          } else {
+            el.textContent = val;
+          }
+        }
+      });
+      updateThemeBtn();
+    }
+
+    // If stored lang differs from page lang, navigate
+    if (_lang !== pageLang && ['ko', 'en', 'ja'].includes(_lang)) {
+      window.location.href = '/' + _lang + '/';
+    }
+
+    // ── Theme ──
+    const sunSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>';
+    const moonSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    const sunSvgSm = sunSvg.replace(/width="15" height="15"/g, 'width="14" height="14"');
+    const moonSvgSm = moonSvg.replace(/width="15" height="15"/g, 'width="14" height="14"');
+
+    function updateThemeBtn() {
+      const btn = document.getElementById('theme-btn');
+      if (!btn) return;
+      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+      btn.innerHTML = isDark ? sunSvg : moonSvg;
+      btn.title = isDark ? t('lightMode') : t('darkMode');
+    }
+
+    function toggleTheme() {
+      const h = document.documentElement;
+      const next = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      h.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateThemeBtn();
+      if ((window as any)._currentTxid) renderGraph((window as any)._currentData);
+      // Notify 3D scene of theme change
+      window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: next } }));
+    }
+
+    // ── Viz logic ──
+    const API = 'https://mempool.space/api';
+
+    function showLoading(v: boolean) {
+      const el = document.getElementById('viz-loading');
+      if (v) el?.classList.remove('hidden'); else el?.classList.add('hidden');
+    }
+
+    async function loadViz() {
+      const val = (document.getElementById('tx-input') as HTMLInputElement).value.trim();
+      if (!val) return;
+      if (/^[0-9a-fA-F]{64}$/.test(val)) { await vizTx(val); }
+      else if (/^(bc1|1|3)[a-zA-Z0-9]{25,62}$/.test(val)) { await vizAddress(val); }
+      else { document.getElementById('viz-info')!.textContent = t('invalidInput'); }
+    }
+
+    async function loadDemo() {
+      (document.getElementById('tx-input') as HTMLInputElement).value = 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16';
+      await vizTx('f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16');
+    }
+
+    async function vizTx(txid: string) {
+      document.getElementById('viz-hint')?.remove();
+      showLoading(true);
+      document.getElementById('viz-info')!.textContent = '';
+      try {
+        const resp = await fetchRetry(`${API}/tx/${txid}`, 10000);
+        if (!resp || !resp.ok) throw new Error('HTTP ' + resp?.status);
+        const tx = await resp.json();
+        (window as any)._currentTxid = txid;
+        (window as any)._currentData = { type: 'tx', tx };
+        renderGraph({ type: 'tx', tx });
+        const totalIn = tx.vin.reduce((s: number, v: any) => s + (v.prevout?.value || 0), 0);
+        const totalOut = tx.vout.reduce((s: number, v: any) => s + (v.value || 0), 0);
+        document.getElementById('viz-info')!.innerHTML =
+          `<b class="viz-info-accent">${txid.slice(0, 16)}…</b> · ` +
+          `${t('inputs')} ${tx.vin.length} (${(totalIn / 1e8).toFixed(4)} BTC) → ` +
+          `${t('outputs')} ${tx.vout.length} (${(totalOut / 1e8).toFixed(4)} BTC) · ` +
+          `${t('fee')} ${tx.fee?.toLocaleString()} sat`;
+      } catch (e) {
+        console.error('vizTx error:', e);
+        document.getElementById('viz-info')!.textContent = t('dataLoadFailed');
+      }
+      showLoading(false);
+    }
+
+    async function vizAddress(address: string) {
+      document.getElementById('viz-hint')?.remove();
+      showLoading(true);
+      document.getElementById('viz-info')!.textContent = '';
+      try {
+        const resp = await fetchRetry(`${API}/address/${address}/txs`, 10000);
+        if (!resp || !resp.ok) throw new Error('HTTP ' + resp?.status);
+        const txs = await resp.json();
+        (window as any)._currentData = { type: 'address', address, txs: txs.slice(0, 10) };
+        renderGraph((window as any)._currentData);
+        document.getElementById('viz-info')!.innerHTML =
+          `<b class="viz-info-accent">${address.slice(0, 20)}…</b> · ${t('recent')} ${Math.min(txs.length, 10)}${t('txViz')}`;
+      } catch (e) {
+        console.error('vizAddress error:', e);
+        document.getElementById('viz-info')!.textContent = t('dataLoadFailed');
+      }
+      showLoading(false);
+    }
+
+    function renderGraph(data: any) {
+      const svg = d3.select('#viz-svg');
+      svg.selectAll('*').remove();
+      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+      const W = document.getElementById('viz-container')!.clientWidth;
+      const H = document.getElementById('viz-container')!.clientHeight;
+
+      const nodes: any[] = [], links: any[] = [];
+
+      if (data.type === 'tx') {
+        const { tx } = data;
+        nodes.push({ id: 'tx', label: tx.txid.slice(0, 8) + '…', type: 'tx', value: tx.fee || 0, txid: tx.txid });
+        tx.vin.slice(0, 10).forEach((v: any, i: number) => {
+          const addr = v.coinbase ? 'Coinbase' : (v.prevout?.scriptpubkey_address || `input-${i}`);
+          const id = `in-${i}`;
+          nodes.push({ id, label: addr === 'Coinbase' ? 'Coinbase' : addr.slice(0, 10) + '…', type: 'input', value: v.prevout?.value || 0, addr });
+          links.push({ source: id, target: 'tx', value: v.prevout?.value || 0 });
+        });
+        tx.vout.slice(0, 10).forEach((v: any, i: number) => {
+          const addr = v.scriptpubkey_address || `out-${i}`;
+          const id = `out-${i}`;
+          nodes.push({ id, label: addr.slice(0, 10) + '…', type: 'output', value: v.value || 0, addr });
+          links.push({ source: 'tx', target: id, value: v.value || 0 });
+        });
+      } else if (data.type === 'address') {
+        const { address, txs } = data;
+        nodes.push({ id: 'addr', label: address.slice(0, 10) + '…', type: 'address', value: 0 });
+        txs.forEach((tx: any, i: number) => {
+          const id = `tx-${i}`;
+          nodes.push({ id, label: tx.txid.slice(0, 8) + '…', type: 'tx', value: tx.fee || 0, txid: tx.txid });
+          links.push({ source: 'addr', target: id, value: tx.fee || 0 });
+        });
+      }
+
+      const colorMap: Record<string, string> = { tx: '#58a6ff', input: '#f7931a', output: '#3fb950', address: '#a371f7' };
+
+      const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id((d: any) => d.id).distance(120).strength(0.8))
+        .force('charge', d3.forceManyBody().strength(-400))
+        .force('center', d3.forceCenter(W / 2, H / 2))
+        .force('collision', d3.forceCollide().radius(40));
+
+      const g = svg.append('g');
+
+      svg.call(d3.zoom().scaleExtent([0.3, 3]).on('zoom', (e: any) => g.attr('transform', e.transform)));
+
+      svg.append('defs').selectAll('marker').data(['arrow']).join('marker')
+        .attr('id', 'arrow').attr('viewBox', '0 -5 10 10').attr('refX', 20).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto')
+        .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', isDark ? '#444c56' : '#b8c0cc');
+
+      const link = g.append('g').selectAll('line').data(links).join('line')
+        .attr('stroke', isDark ? '#30363d' : '#d0d7de')
+        .attr('stroke-width', (d: any) => Math.max(1, Math.log10((d.value || 1) / 1e6) + 2))
+        .attr('marker-end', 'url(#arrow)');
+
+      const node = g.append('g').selectAll('g').data(nodes).join('g')
+        .attr('cursor', 'pointer')
+        .call(d3.drag()
+          .on('start', (e: any, d: any) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; d._dragged = false; })
+          .on('drag', (e: any, d: any) => { d.fx = e.x; d.fy = e.y; d._dragged = true; })
+          .on('end', (e: any, d: any) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+      node.append('circle')
+        .attr('r', (d: any) => d.type === 'tx' ? 16 : 12)
+        .attr('fill', (d: any) => colorMap[d.type] || '#8b949e')
+        .attr('fill-opacity', 0.85)
+        .attr('stroke', isDark ? '#0d1117' : '#fff')
+        .attr('stroke-width', 2);
+
+      node.append('text')
+        .attr('text-anchor', 'middle').attr('dy', '0.35em')
+        .attr('font-family', "'Space Mono', monospace").attr('font-size', '6px')
+        .attr('fill', '#fff').attr('pointer-events', 'none')
+        .text((d: any) => d.type === 'tx' ? 'TX' : d.type === 'input' ? 'IN' : d.type === 'output' ? 'OUT' : '\u2B1F');
+
+      node.append('text')
+        .attr('text-anchor', 'middle').attr('dy', 26)
+        .attr('font-family', "'Space Mono', monospace").attr('font-size', '8px')
+        .attr('fill', isDark ? '#8b949e' : '#656d76').attr('pointer-events', 'none')
+        .text((d: any) => d.label);
+
+      const tooltip = document.getElementById('tooltip')!;
+      const typeClassMap: Record<string, string> = { tx: 'tooltip-type-tx', input: 'tooltip-type-input', output: 'tooltip-type-output', address: 'tooltip-type-address' };
+      node.on('mouseover', (_e: any, d: any) => {
+        const btc = d.value ? (d.value / 1e8).toFixed(4) + ' BTC' : '';
+        const cls = typeClassMap[d.type] || '';
+        tooltip.innerHTML = `<b class="tooltip-type ${cls}">${escHtml(d.type.toUpperCase())}</b><br>${escHtml(d.addr || d.label)}${btc ? '<br>' + btc : ''}`;
+        tooltip.classList.add('tooltip-visible');
+      }).on('mousemove', (e: any) => {
+        tooltip.style.setProperty('--tx', (e.offsetX + 14) + 'px');
+        tooltip.style.setProperty('--ty', (e.offsetY - 10) + 'px');
+      }).on('mouseout', () => { tooltip.classList.remove('tooltip-visible'); })
+        .on('click', (_e: any, d: any) => {
+          if (d._dragged) return;
+          if (d.type === 'tx') {
+            const txid = d.txid || (d.id === 'tx' ? (window as any)._currentTxid : null);
+            if (!txid || !/^[0-9a-fA-F]{64}$/.test(txid)) return;
+            if (txid === (window as any)._currentTxid && data.type === 'tx') {
+              window.open(`https://txid.uk/#/tx/${txid}`, '_blank');
+            } else {
+              (document.getElementById('tx-input') as HTMLInputElement).value = txid;
+              vizTx(txid);
+            }
+          } else if (d.addr && /^(bc1|1|3)[a-zA-Z0-9]{25,62}$/.test(d.addr)) {
+            (document.getElementById('tx-input') as HTMLInputElement).value = d.addr;
+            vizAddress(d.addr);
+          }
+        });
+
+      simulation.on('tick', () => {
+        link.attr('x1', (d: any) => d.source.x).attr('y1', (d: any) => d.source.y).attr('x2', (d: any) => d.target.x).attr('y2', (d: any) => d.target.y);
+        node.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+      });
+
+      document.getElementById('viz-legend')?.classList.remove('hidden');
+    }
+
+    // ── URL params auto-execute ──
+    (function () {
+      const p = new URLSearchParams(location.search);
+      const tx = p.get('tx'), addr = p.get('addr');
+      if (tx) { (document.getElementById('tx-input') as HTMLInputElement).value = tx; vizTx(tx); }
+      else if (addr) { (document.getElementById('tx-input') as HTMLInputElement).value = addr; vizAddress(addr); }
+    })();
+
+    // ── Hamburger menu ──
+    function updateHamburger() {
+      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+      const icon = document.getElementById('hamburger-theme-icon');
+      if (icon) icon.innerHTML = isDark ? sunSvgSm : moonSvgSm;
+      document.querySelectorAll<HTMLElement>('#hamburger-panel .settings-lang-btn').forEach((b) => {
+        b.classList.toggle('active', b.dataset.lang === _lang);
+      });
+    }
+
+    // ── Init ──
+    (function init() {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      setLang(_lang);
+      updateThemeBtn();
+    })();
+
+    // ── Event listeners ──
+    function toggleLang() {
+      const m = document.getElementById('lang-menu');
+      m?.classList.toggle('open');
+      document.getElementById('lang-btn')?.setAttribute('aria-expanded', String(m?.classList.contains('open') || false));
+    }
+
+    document.getElementById('tx-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadViz(); });
+    document.getElementById('lang-btn')?.addEventListener('click', toggleLang);
+    document.querySelectorAll('#lang-menu button').forEach((btn) => {
+      const lang = btn.textContent === '한국어' ? 'ko' : btn.textContent === 'English' ? 'en' : 'ja';
+      btn.addEventListener('click', () => setLang(lang));
+    });
+    document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
+    document.getElementById('viz-btn')?.addEventListener('click', loadViz);
+    document.getElementById('demo-btn')?.addEventListener('click', loadDemo);
+
+    document.addEventListener('click', (e) => {
+      const m = document.getElementById('lang-menu');
+      if (m && !(e.target as HTMLElement).closest('.lang-dropdown')) {
+        m.classList.remove('open');
+        document.getElementById('lang-btn')?.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.getElementById('hamburger-btn')?.addEventListener('click', function () {
+      const panel = document.getElementById('hamburger-panel');
+      if (!panel) return;
+      const open = panel.classList.toggle('open');
+      this.setAttribute('aria-expanded', String(open));
+      if (open) updateHamburger();
+    });
+
+    document.addEventListener('click', (e) => {
+      const wrap = document.querySelector('.hamburger-wrap');
+      const panel = document.getElementById('hamburger-panel');
+      if (wrap && panel && !wrap.contains(e.target as Node)) {
+        panel.classList.remove('open');
+        document.getElementById('hamburger-btn')?.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.querySelectorAll<HTMLElement>('#hamburger-panel .settings-lang-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setLang(btn.dataset.lang!);
+        document.getElementById('hamburger-panel')?.classList.remove('open');
+        document.getElementById('hamburger-btn')?.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    document.getElementById('hamburger-theme-btn')?.addEventListener('click', () => {
+      toggleTheme();
+      updateHamburger();
+    });
+
+    // ═══════════════════════════════════════════════
+    // ── Tab switching ──
+    // ═══════════════════════════════════════════════
+    let activeTab = 'txgraph';
+
+    function switchTab(tab: string) {
+      activeTab = tab;
+      document.getElementById('tab-txgraph')?.classList.toggle('active', tab === 'txgraph');
+      document.getElementById('tab-mempool3d')?.classList.toggle('active', tab === 'mempool3d');
+      document.getElementById('panel-txgraph')?.classList.toggle('hidden', tab !== 'txgraph');
+      document.getElementById('panel-mempool3d')?.classList.toggle('hidden', tab !== 'mempool3d');
+
+      // Notify the 3D module
+      window.dispatchEvent(new CustomEvent('mempool3d-tab', { detail: { active: tab === 'mempool3d' } }));
+    }
+
+    document.getElementById('tab-txgraph')?.addEventListener('click', () => switchTab('txgraph'));
+    document.getElementById('tab-mempool3d')?.addEventListener('click', () => switchTab('mempool3d'));
+
+    // Handle URL param ?tab=mempool3d
+    if (new URLSearchParams(location.search).get('tab') === 'mempool3d') {
+      switchTab('mempool3d');
+    }
+  </script>
+
+  <!-- 3D Mempool - separate module script using importmap -->
+  <script type="module" is:inline>
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    let mScene = null, mCamera = null, mRenderer = null, mControls = null;
+    let mTxMeshes = [];
+    let mParticles = [];
+    let mRaycaster = null, mMouse = null;
+    let mAnimationId = null;
+    let mFetchInterval = null;
+    let mKnownTxids = new Set();
+    let mTxDataMap = new Map();
+    let mInitialized = false;
+
+    function feeRateColor(feeRate) {
+      if (feeRate <= 5) return new THREE.Color(0x3fb950);
+      if (feeRate <= 15) return new THREE.Color(0x7ec850);
+      if (feeRate <= 30) return new THREE.Color(0xbdd430);
+      if (feeRate <= 50) return new THREE.Color(0xd4a017);
+      if (feeRate <= 100) return new THREE.Color(0xf7931a);
+      if (feeRate <= 200) return new THREE.Color(0xf06030);
+      return new THREE.Color(0xf85149);
+    }
+
+    function vBytesToSize(vsize) {
+      const minS = 0.3, maxS = 2.5;
+      const logV = Math.log10(Math.max(vsize, 100));
+      const logMin = Math.log10(100);
+      const logMax = Math.log10(100000);
+      const t = Math.min(1, Math.max(0, (logV - logMin) / (logMax - logMin)));
+      return minS + t * (maxS - minS);
+    }
+
+    async function fetchRetryM(url, timeout = 8000, retries = 2) {
+      for (let i = 0; i <= retries; i++) {
+        try {
+          return await fetch(url, { signal: AbortSignal.timeout(timeout) });
+        } catch (e) {
+          if (i >= retries) throw e;
+          await new Promise(r => setTimeout(r, 1000 << i));
+        }
+      }
+    }
+
+    function initMempool3D() {
+      if (mInitialized) return;
+      mInitialized = true;
+
+      const container = document.getElementById('mempool-container');
+      const canvas = document.getElementById('mempool-canvas');
+      if (!container || !canvas) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+
+      // Scene
+      mScene = new THREE.Scene();
+      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+      mScene.background = new THREE.Color(isDark ? 0x0d1117 : 0xf6f8fa);
+      mScene.fog = new THREE.FogExp2(isDark ? 0x0d1117 : 0xf6f8fa, 0.006);
+
+      // Camera
+      mCamera = new THREE.PerspectiveCamera(60, w / h, 0.1, 1000);
+      mCamera.position.set(0, 30, 60);
+
+      // Renderer
+      mRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+      mRenderer.setSize(w, h);
+      mRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      // Controls
+      mControls = new OrbitControls(mCamera, canvas);
+      mControls.enableDamping = true;
+      mControls.dampingFactor = 0.08;
+      mControls.maxDistance = 150;
+      mControls.minDistance = 10;
+      mControls.target.set(0, 10, 0);
+
+      // Lights
+      mScene.add(new THREE.AmbientLight(0xffffff, 0.5));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(30, 50, 30);
+      mScene.add(dirLight);
+      const pointLight = new THREE.PointLight(0xf7931a, 0.4, 100);
+      pointLight.position.set(-20, 40, -20);
+      mScene.add(pointLight);
+
+      // Grid floor
+      const gridHelper = new THREE.GridHelper(120, 40, isDark ? 0x21262d : 0xd0d7de, isDark ? 0x161b22 : 0xeaeef2);
+      mScene.add(gridHelper);
+
+      // Vertical axis line
+      const axisMat = new THREE.LineBasicMaterial({ color: isDark ? 0x30363d : 0xb8c0cc, transparent: true, opacity: 0.5 });
+      const axisGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 60, 0)]);
+      mScene.add(new THREE.Line(axisGeo, axisMat));
+
+      // Raycaster
+      mRaycaster = new THREE.Raycaster();
+      mMouse = new THREE.Vector2();
+
+      canvas.addEventListener('mousemove', onMouseMove);
+      canvas.addEventListener('mouseleave', () => {
+        document.getElementById('mempool-tooltip')?.classList.remove('visible');
+      });
+
+      // Start fetching and animating
+      fetchMempoolData();
+      mFetchInterval = setInterval(fetchMempoolData, 10000);
+      animate();
+    }
+
+    function onMouseMove(e) {
+      const container = document.getElementById('mempool-container');
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      mMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      mRaycaster.setFromCamera(mMouse, mCamera);
+      const intersects = mRaycaster.intersectObjects(mTxMeshes);
+      const tooltip = document.getElementById('mempool-tooltip');
+      if (!tooltip) return;
+
+      if (intersects.length > 0) {
+        const mesh = intersects[0].object;
+        const txData = mTxDataMap.get(mesh.userData.txid);
+        if (txData) {
+          const feeRate = (txData.fee / (txData.weight / 4)).toFixed(1);
+          tooltip.innerHTML =
+            '<b style="color:var(--accent-text)">' + txData.txid.slice(0, 16) + '...</b><br>' +
+            '<span style="color:var(--text2)">vSize:</span> ' + (txData.weight / 4).toLocaleString() + ' vB<br>' +
+            '<span style="color:var(--text2)">Fee:</span> ' + txData.fee.toLocaleString() + ' sat<br>' +
+            '<span style="color:var(--text2)">Fee Rate:</span> ' + feeRate + ' sat/vB<br>' +
+            '<span style="color:var(--text2)">Value:</span> ' + (txData.value / 1e8).toFixed(4) + ' BTC';
+          tooltip.style.left = (e.clientX - rect.left + 14) + 'px';
+          tooltip.style.top = (e.clientY - rect.top - 10) + 'px';
+          tooltip.classList.add('visible');
+        }
+      } else {
+        tooltip.classList.remove('visible');
+      }
+    }
+
+    async function fetchMempoolData() {
+      try {
+        const [statsResp, recentResp] = await Promise.all([
+          fetchRetryM('https://mempool.space/api/mempool'),
+          fetchRetryM('https://mempool.space/api/mempool/recent')
+        ]);
+        if (!statsResp || !statsResp.ok || !recentResp || !recentResp.ok) return;
+
+        const stats = await statsResp.json();
+        const recentTxs = await recentResp.json();
+
+        // Update stats display
+        const el = (id) => document.getElementById(id);
+        el('stat-tx-count').textContent = (stats.count || 0).toLocaleString();
+        el('stat-total-size').textContent = ((stats.vsize || 0) / 1e6).toFixed(1) + ' vMB';
+
+        // Median fee rate
+        const feeRates = recentTxs
+          .filter(tx => tx.fee && tx.weight)
+          .map(tx => tx.fee / (tx.weight / 4));
+        feeRates.sort((a, b) => a - b);
+        const medianFee = feeRates.length > 0 ? feeRates[Math.floor(feeRates.length / 2)] : 0;
+        el('stat-median-fee').textContent = medianFee.toFixed(1) + ' sat/vB';
+
+        // Process up to 80 TXs
+        const txsToShow = recentTxs.slice(0, 80);
+        el('stat-shown-count').textContent = String(txsToShow.length);
+
+        const newTxids = new Set(txsToShow.map(tx => tx.txid));
+
+        // Remove old meshes
+        mTxMeshes = mTxMeshes.filter(mesh => {
+          if (!newTxids.has(mesh.userData.txid)) {
+            mScene.remove(mesh);
+            mesh.geometry.dispose();
+            mesh.material.dispose();
+            mKnownTxids.delete(mesh.userData.txid);
+            mTxDataMap.delete(mesh.userData.txid);
+            return false;
+          }
+          return true;
+        });
+
+        // Add new TXs
+        txsToShow.forEach((tx, i) => {
+          mTxDataMap.set(tx.txid, tx);
+          if (mKnownTxids.has(tx.txid)) return;
+          mKnownTxids.add(tx.txid);
+
+          const vsize = tx.weight ? tx.weight / 4 : 200;
+          const feeRate = tx.fee && tx.weight ? tx.fee / (tx.weight / 4) : 5;
+          const cubeSize = vBytesToSize(vsize);
+          const color = feeRateColor(feeRate);
+
+          // Spiral layout in XZ, Y = newer is higher
+          const angle = (i / txsToShow.length) * Math.PI * 6 + Math.random() * 0.5;
+          const radius = 8 + Math.random() * 40;
+          const x = Math.cos(angle) * radius;
+          const z = Math.sin(angle) * radius;
+          const y = 2 + (i / txsToShow.length) * 40 + Math.random() * 3;
+
+          // High-fee = sphere, normal = cube
+          const geometry = feeRate > 100
+            ? new THREE.SphereGeometry(cubeSize * 0.7, 12, 12)
+            : new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+
+          const material = new THREE.MeshPhongMaterial({
+            color, transparent: true, opacity: 0.85, shininess: 60,
+            emissive: color.clone().multiplyScalar(0.15),
+          });
+
+          const mesh = new THREE.Mesh(geometry, material);
+          mesh.position.set(x, y, z);
+          mesh.userData = {
+            txid: tx.txid, targetY: y,
+            floatOffset: Math.random() * Math.PI * 2,
+            floatSpeed: 0.3 + Math.random() * 0.5,
+            rotSpeed: (Math.random() - 0.5) * 0.02,
+            spawning: true, spawnTime: performance.now()
+          };
+          mesh.scale.set(0.01, 0.01, 0.01);
+
+          mScene.add(mesh);
+          mTxMeshes.push(mesh);
+          spawnParticles(x, y, z, color);
+        });
+      } catch (err) {
+        console.warn('Mempool fetch error:', err);
+      }
+    }
+
+    function spawnParticles(x, y, z, color) {
+      for (let i = 0; i < 6; i++) {
+        const geo = new THREE.SphereGeometry(0.1, 4, 4);
+        const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 });
+        const p = new THREE.Mesh(geo, mat);
+        p.position.set(x, y, z);
+        p.userData.vel = new THREE.Vector3(
+          (Math.random() - 0.5) * 0.4,
+          Math.random() * 0.3 + 0.1,
+          (Math.random() - 0.5) * 0.4
+        );
+        p.userData.life = 1.0;
+        mScene.add(p);
+        mParticles.push(p);
+      }
+    }
+
+    function animate() {
+      mAnimationId = requestAnimationFrame(animate);
+      const now = performance.now();
+
+      // Animate TX meshes
+      mTxMeshes.forEach(mesh => {
+        if (mesh.userData.spawning) {
+          const elapsed = (now - mesh.userData.spawnTime) / 500;
+          if (elapsed >= 1) {
+            mesh.scale.set(1, 1, 1);
+            mesh.userData.spawning = false;
+          } else {
+            const s = elapsed * elapsed * (3 - 2 * elapsed); // smoothstep
+            mesh.scale.set(s, s, s);
+          }
+        }
+        const t = now / 1000;
+        mesh.position.y = mesh.userData.targetY + Math.sin(t * mesh.userData.floatSpeed + mesh.userData.floatOffset) * 0.5;
+        mesh.rotation.x += mesh.userData.rotSpeed;
+        mesh.rotation.y += mesh.userData.rotSpeed * 0.7;
+      });
+
+      // Animate particles
+      for (let i = mParticles.length - 1; i >= 0; i--) {
+        const p = mParticles[i];
+        p.position.add(p.userData.vel);
+        p.userData.vel.y -= 0.005;
+        p.userData.life -= 0.025;
+        p.material.opacity = Math.max(0, p.userData.life);
+        if (p.userData.life <= 0) {
+          mScene.remove(p);
+          p.geometry.dispose();
+          p.material.dispose();
+          mParticles.splice(i, 1);
+        }
+      }
+
+      mControls.update();
+      mRenderer.render(mScene, mCamera);
+    }
+
+    function resizeMempool() {
+      if (!mRenderer) return;
+      const container = document.getElementById('mempool-container');
+      if (!container) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      mCamera.aspect = w / h;
+      mCamera.updateProjectionMatrix();
+      mRenderer.setSize(w, h);
+    }
+
+    // Listen for tab switch events from the main script
+    window.addEventListener('mempool3d-tab', (e) => {
+      if (e.detail.active) {
+        initMempool3D();
+        // Resize after panel becomes visible
+        requestAnimationFrame(() => resizeMempool());
+      }
+    });
+
+    // Listen for theme changes
+    window.addEventListener('theme-changed', (e) => {
+      if (!mScene) return;
+      const isDark = e.detail.theme === 'dark';
+      mScene.background = new THREE.Color(isDark ? 0x0d1117 : 0xf6f8fa);
+      if (mScene.fog) mScene.fog.color = new THREE.Color(isDark ? 0x0d1117 : 0xf6f8fa);
+    });
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      if (mRenderer) resizeMempool();
+    });
+  </script>
+</Base>
