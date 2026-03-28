@@ -15,15 +15,15 @@ export function getStaticPaths() {
 const { lang } = Astro.params;
 
 const titles: Record<string, string> = {
-  ko: 'Bitcoin Visualizer — TX 그래프 & 3D 멤풀 | txid.uk',
-  en: 'Bitcoin Visualizer — TX Graph & 3D Mempool | txid.uk',
-  ja: 'Bitcoin Visualizer — TXグラフ & 3Dメンプール | txid.uk',
+  ko: '비트코인 데이터 시각화 — 차트 & 그래프 | viz.txid.uk',
+  en: 'Bitcoin Data Visualization — Charts & Graphs | viz.txid.uk',
+  ja: 'ビットコインデータ可視化 — チャート & グラフ | viz.txid.uk',
 };
 
 const descriptions: Record<string, string> = {
-  ko: '비트코인 트랜잭션을 인터랙티브 D3 포스 그래프로 시각화하고, 실시간 멤풀을 3D로 탐색하세요.',
-  en: 'Visualize Bitcoin transactions as an interactive D3 force graph and explore the live mempool in 3D with Three.js.',
-  ja: 'ビットコイントランザクションをインタラクティブなD3フォースグラフで可視化し、リアルタイムメンプールを3Dで探索。',
+  ko: '비트코인 데이터 시각화. 블록체인 데이터를 직관적인 차트와 그래프로 확인하세요.',
+  en: 'Bitcoin data visualization. Explore blockchain data through intuitive charts and graphs.',
+  ja: 'ビットコインデータ可視化。ブロックチェーンデータを直感的なチャートとグラフで確認。',
 };
 
 const i18n: Record<string, Record<string, string>> = {
